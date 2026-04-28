@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dbizi Station Optimizer — How it works</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0b1220;
+      --surface: #0f172a;
+      --border: rgba(148,163,184,0.18);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --dim: #64748b;
+      --accent: #22d3ee;
+      --accent2: #818cf8;
+      --warn: #fbbf24;
+      --ok: #4ade80;
+      --danger: #f87171;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      min-height: 100vh;
+    }
+
+    /* ── Layout ── */
+    .page {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .kicker {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: clamp(24px, 6vw, 36px);
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 15px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ── Sections ── */
+    section {
+      margin-bottom: 40px;
+    }
+    h2 {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+    p {
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    p:last-child { margin-bottom: 0; }
+
+    /* ── Pillar cards ── */
+    .pillars {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .pillar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .pillar-icon {
+      font-size: 26px;
+      flex-shrink: 0;
+      width: 36px;
+      text-align: center;
+      margin-top: 2px;
+    }
+    .pillar-body {}
+    .pillar-title {
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+      font-size: 15px;
+    }
+    .pillar-desc {
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    /* ── Features grid ── */
+    .features {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 16px;
+    }
+    .feature-item {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-size: 13.5px;
+      color: var(--muted);
+    }
+    .feature-item .dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+      position: relative;
+      top: -1px;
+    }
+    .feature-item strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    /* ── Optimizer flow ── */
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .flow-step {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .flow-left {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+      width: 32px;
+    }
+    .flow-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #0b1220;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+    .flow-line {
+      width: 2px;
+      flex: 1;
+      min-height: 28px;
+      background: var(--border);
+      margin: 4px 0;
+    }
+    .flow-body {
+      padding-top: 4px;
+      padding-bottom: 28px;
+    }
+    .flow-body p {
+      font-size: 14px;
+      color: var(--muted);
+      margin: 4px 0 0;
+    }
+    .flow-label {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    /* ── Controls legend ── */
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .ctrl {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .ctrl-tag {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #0b1220;
+      background: var(--accent);
+      border-radius: 4px;
+      padding: 2px 7px;
+      flex-shrink: 0;
+      margin-top: 2px;
+      font-family: ui-monospace, monospace;
+    }
+    .ctrl-tag.w  { background: var(--accent2); }
+    .ctrl-tag.lam { background: var(--warn); color: #0b1220; }
+    .ctrl-tag.pop { background: var(--ok);   color: #0b1220; }
+    .ctrl-body {}
+    .ctrl-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+    .ctrl-desc { font-size: 13px; color: var(--muted); }
+
+    /* ── Divider ── */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 40px 0;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      color: var(--dim);
+      font-size: 12px;
+    }
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Header ── -->
+  <header class="header">
+    <span class="kicker">Dbizi · San Sebastián</span>
+    <h1>Redesigning the bike-sharing network</h1>
+    <p class="subtitle">
+      A data-driven model that finds where to place stations so more people can ride,
+      fewer staff hours are spent rebalancing bikes, and fewer truck trips pollute the city.
+    </p>
+  </header>
+
+  <!-- ── Why ── -->
+  <section>
+    <h2>The problem</h2>
+    <p>
+      Dbizi has 70 stations across the city. Many were placed years ago by intuition.
+      Some are chronically empty at rush hour; others sit full all day and require constant
+      rebalancing. With real usage data now available, we can do better.
+    </p>
+    <p>
+      This tool asks: given a budget of <em>N</em> stations, where should they go to maximise
+      ridership while minimising operational burden?
+    </p>
+  </section>
+
+  <hr />
+
+  <!-- ── Three pillars ── -->
+  <section>
+    <h2>Three things the model cares about</h2>
+    <div class="pillars">
+
+      <div class="pillar">
+        <div class="pillar-icon">🚲</div>
+        <div class="pillar-body">
+          <div class="pillar-title">Demand</div>
+          <p class="pillar-desc">
+            How much cycling activity a location is expected to attract.
+            Predicted by a machine-learning model (ExtraTrees) trained on the 70 current stations,
+            then applied citywide to 15,000 m² hexagonal cells.
+            Each station captures demand from its surroundings — shaped by
+            <strong>elevation</strong>, nearby <strong>bike-sharing network density</strong>,
+            <strong>residential population</strong>, the concentration of
+            <strong>points of interest</strong> such as workplaces, restaurants, and transit stops,
+            among others.
+          </p>
+        </div>
+      </div>
+
+      <div class="pillar">
+        <div class="pillar-icon">⚖️</div>
+        <div class="pillar-body">
+          <div class="pillar-title">Rebalancing burden</div>
+          <p class="pillar-desc">
+            Some locations structurally generate imbalance: gravity, commute patterns, and uneven
+            land use create persistent flows that staff must reverse by truck every day. The model penalises these locations using
+            <strong>LIS</strong> (Lost Imbalance Surplus — bike-hours outside a ±10 bike comfort band)
+            scaled by day-to-day <strong>variability</strong>, so erratic stations pay an extra cost.
+          </p>
+        </div>
+      </div>
+
+      <div class="pillar">
+        <div class="pillar-icon">👥</div>
+        <div class="pillar-body">
+          <div class="pillar-title">Population coverage</div>
+          <p class="pillar-desc">
+            Some parts of the city will never be high-demand corridors — and some are an
+            operational headache to serve. But they still need access. Population coverage
+            is a very present metric in the model: layouts that leave too many residents
+            further than 300 m from a station are penalised, keeping equity visible
+            throughout the optimisation.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ── Demand features ── -->
+  <section>
+    <h2>What predicts demand?</h2>
+    <p style="color:var(--muted); font-size:14px; margin-bottom:16px;">
+      The model was trained on actual Dbizi trip counts per station, normalised by effective
+      catchment area. Eight neighbourhood-level features were tested; the strongest predictors:
+    </p>
+    <div class="features">
+      <div class="feature-grid">
+        <div class="feature-item"><span class="dot"></span><span><strong>Bike lane length</strong> nearby</span></div>
+        <div class="feature-item"><span class="dot"></span><span><strong>Workers</strong> in the area</span></div>
+        <div class="feature-item"><span class="dot"></span><span><strong>Restaurants, bars &amp; shops</strong> within 300 m</span></div>
+        <div class="feature-item"><span class="dot"></span><span><strong>Residential population</strong></span></div>
+        <div class="feature-item"><span class="dot"></span><span><strong>Land-use entropy</strong> (mix of uses)</span></div>
+        <div class="feature-item"><span class="dot"></span><span><strong>Altitude</strong> (steeper = less use)</span></div>
+        <div class="feature-item"><span class="dot"></span><span><strong>City-centre</strong> flag</span></div>
+        <div class="feature-item"><span class="dot"></span><span><strong>Income</strong> per person</span></div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ── Optimizer ── -->
+  <section>
+    <h2>How the optimizer works</h2>
+    <div class="flow">
+
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="flow-num">1</div>
+          <div class="flow-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="flow-label">Score every hexagon</div>
+          <p>Each of the ~1 000 feasible city hexagons gets a demand score, a rebalancing cost, and a stability index — all normalised to [0, 1].</p>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="flow-num">2</div>
+          <div class="flow-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="flow-label">Greedy warm start</div>
+          <p>Stations with mandatory infrastructure (electrical hookups, intermodal nodes) are fixed. Remaining slots are filled greedily — always picking the hexagon with the best marginal gain.</p>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="flow-num">3</div>
+          <div class="flow-line"></div>
+        </div>
+        <div class="flow-body">
+          <div class="flow-label">Simulated annealing</div>
+          <p>300 000 random station swaps are proposed. Good swaps are always accepted; slightly bad ones are sometimes accepted too — this lets the algorithm escape local optima. Temperature cools gradually, converging to a stable solution. Three independent restarts are run; the best is kept.</p>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <div class="flow-left">
+          <div class="flow-num">4</div>
+        </div>
+        <div class="flow-body">
+          <div class="flow-label">Size each station</div>
+          <p>The total number of docks scales proportionally with the number of stations. Within that budget, stations with high effective demand, high imbalance, and high occupancy variability are assigned more docks (large); the rest get fewer.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- ── Controls ── -->
+  <section>
+    <h2>What you can tune in the demo</h2>
+    <div class="controls">
+
+      <div class="ctrl">
+        <span class="ctrl-tag">N</span>
+        <div class="ctrl-body">
+          <div class="ctrl-name">Number of stations</div>
+          <div class="ctrl-desc">How many stations to place. Current network has 70. More stations improve coverage and unlock latent demand, but increase capital cost.</div>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <span class="ctrl-tag w">W</span>
+        <div class="ctrl-body">
+          <div class="ctrl-name">Demand weight</div>
+          <div class="ctrl-desc">W = 1 → pure ridership maximisation. W = 0 → pure rebalancing minimisation. Default 0.6 balances both.</div>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <span class="ctrl-tag lam">λ</span>
+        <div class="ctrl-body">
+          <div class="ctrl-name">Proximity penalty</div>
+          <div class="ctrl-desc">Discourages placing two stations too close together. Higher λ spreads stations out more aggressively.</div>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <span class="ctrl-tag pop">POP</span>
+        <div class="ctrl-body">
+          <div class="ctrl-name">Coverage target</div>
+          <div class="ctrl-desc">A penalty applied to layouts that fall short of the set coverage threshold — population within 300 m of a station. Raising this makes the optimizer penalise under-served residential areas more heavily.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <hr />
+
+  <footer>
+    <p>Dbizi station optimizer · Members Week 2025 · Donostia – San Sebastián</p>
+  </footer>
+
+</div>
+</body>
+</html>
