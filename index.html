@@ -235,9 +235,9 @@
       margin-top: 2px;
       font-family: ui-monospace, monospace;
     }
-    .ctrl-tag.w  { background: var(--accent2); }
-    .ctrl-tag.lam { background: var(--warn); color: #0b1220; }
-    .ctrl-tag.pop { background: var(--ok);   color: #0b1220; }
+    .ctrl-tag.w   { background: var(--accent2); }
+    .ctrl-tag.cov { background: var(--warn); color: #0b1220; }
+    .ctrl-tag.man { background: var(--ok);   color: #0b1220; }
     .ctrl-body {}
     .ctrl-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
     .ctrl-desc { font-size: 13px; color: var(--muted); }
@@ -278,13 +278,14 @@
   <section>
     <h2>The problem</h2>
     <p>
-      Dbizi has 70 stations across the city. Many were placed years ago by intuition.
+      Dbizi has 69 stations across the city. Many were placed years ago by intuition.
       Some are chronically empty at rush hour; others sit full all day and require constant
-      rebalancing. With real usage data now available, we can do better.
+      rebalancing. With a full year of real trip data now available, we can do better.
     </p>
     <p>
       This tool asks: given a budget of <em>N</em> stations, where should they go to maximise
-      ridership while minimising operational burden?
+      ridership while minimising operational burden — without leaving whole neighbourhoods
+      out of walking range?
     </p>
   </section>
 
@@ -301,13 +302,13 @@
           <div class="pillar-title">Demand</div>
           <p class="pillar-desc">
             How much cycling activity a location is expected to attract.
-            Predicted by a machine-learning model (ExtraTrees) trained on the 70 current stations,
-            then applied citywide to 15,000 m² hexagonal cells.
-            Each station captures demand from its surroundings — shaped by
-            <strong>elevation</strong>, nearby <strong>bike-sharing network density</strong>,
-            <strong>residential population</strong>, the concentration of
-            <strong>points of interest</strong> such as workplaces, restaurants, and transit stops,
-            among others.
+            A gradient-boosting model (LightGBM) is trained on the 69 current stations —
+            on trips per m² of catchment area, not raw trip counts — and then applied citywide
+            to hexagonal cells of ~2 200 m². Each station captures demand from its surroundings,
+            shaped by <strong>elevation</strong>, nearby <strong>cycling infrastructure</strong>,
+            <strong>residential population</strong>, and the concentration of
+            <strong>points of interest</strong> such as workplaces, restaurants, and transit stops.
+            Leave-one-station-out R² = 0.66.
           </p>
         </div>
       </div>
@@ -315,12 +316,14 @@
       <div class="pillar">
         <div class="pillar-icon">⚖️</div>
         <div class="pillar-body">
-          <div class="pillar-title">Rebalancing burden</div>
+          <div class="pillar-title">Operating cost</div>
           <p class="pillar-desc">
             Some locations structurally generate imbalance: gravity, commute patterns, and uneven
-            land use create persistent flows that staff must reverse by truck every day. The model penalises these locations using
-            <strong>LIS</strong> (Lost Imbalance Surplus — bike-hours outside a ±10 bike comfort band)
-            scaled by day-to-day <strong>variability</strong>, so erratic stations pay an extra cost.
+            land use create persistent flows that staff must reverse by van every day. Cost is built
+            from three pillars — <strong>LIS</strong> (Lost Imbalance Surplus: bike-hours outside a
+            ±10 bike comfort band), inflated by day-to-day <strong>unpredictability</strong> and by the
+            <strong>drive time</strong> from the nearest main road corridor, so erratic and hard-to-reach
+            stations pay extra.
           </p>
         </div>
       </div>
@@ -331,10 +334,10 @@
           <div class="pillar-title">Population coverage</div>
           <p class="pillar-desc">
             Some parts of the city will never be high-demand corridors — and some are an
-            operational headache to serve. But they still need access. Population coverage
-            is a very present metric in the model: layouts that leave too many residents
-            further than 300 m from a station are penalised, keeping equity visible
-            throughout the optimisation.
+            operational headache to serve. But they still need access. Coverage enters as a
+            <em>hard constraint</em>, not a penalty: the layout must put at least a chosen
+            percentage of residents within 200 m of a station, whatever the demand surface says
+            about those neighbourhoods.
           </p>
         </div>
       </div>
@@ -348,15 +351,16 @@
   <section>
     <h2>What predicts demand?</h2>
     <p style="color:var(--muted); font-size:14px; margin-bottom:16px;">
-      The model was trained on actual Dbizi trip counts per station, normalised by effective
-      catchment area. Eight neighbourhood-level features were tested; the strongest predictors:
+      The model was trained on decensored Dbizi trip counts per station, normalised by an
+      overlap-corrected catchment area. Nine neighbourhood-level features describe every hexagon:
     </p>
     <div class="features">
       <div class="feature-grid">
         <div class="feature-item"><span class="dot"></span><span><strong>Bike lane length</strong> nearby</span></div>
         <div class="feature-item"><span class="dot"></span><span><strong>Workers</strong> in the area</span></div>
         <div class="feature-item"><span class="dot"></span><span><strong>Restaurants, bars &amp; shops</strong> within 300 m</span></div>
-        <div class="feature-item"><span class="dot"></span><span><strong>Residential population</strong></span></div>
+        <div class="feature-item"><span class="dot"></span><span><strong>Residential population</strong> (age-weighted)</span></div>
+        <div class="feature-item"><span class="dot"></span><span><strong>Schools &amp; universities</strong> nearby</span></div>
         <div class="feature-item"><span class="dot"></span><span><strong>Land-use entropy</strong> (mix of uses)</span></div>
         <div class="feature-item"><span class="dot"></span><span><strong>Altitude</strong> (steeper = less use)</span></div>
         <div class="feature-item"><span class="dot"></span><span><strong>City-centre</strong> flag</span></div>
@@ -378,8 +382,8 @@
           <div class="flow-line"></div>
         </div>
         <div class="flow-body">
-          <div class="flow-label">Score every hexagon</div>
-          <p>Each of the ~1 000 feasible city hexagons gets a demand score, a rebalancing cost, and a stability index — all normalised to [0, 1].</p>
+          <div class="flow-label">Score every candidate site</div>
+          <p>The city is filtered down to ~5 000 buildable hexagons — at least 500 residents within 300 m, no river, no pedestrianised Old Town. Each one carries a demand score and an operating-cost score, both normalised to [0, 1].</p>
         </div>
       </div>
 
@@ -389,8 +393,8 @@
           <div class="flow-line"></div>
         </div>
         <div class="flow-body">
-          <div class="flow-label">Greedy warm start</div>
-          <p>Stations with mandatory infrastructure (electrical hookups, intermodal nodes) are fixed. Remaining slots are filled greedily — always picking the hexagon with the best marginal gain.</p>
+          <div class="flow-label">Write it as an integer program</div>
+          <p>One yes/no variable per hexagon. Maximise W × demand − (1 − W) × cost, subject to four rules: exactly N stations; 26 stations with electrical hookups or at intermodal nodes are kept; the coverage floor is met; and no two stations sit closer than their minimum separation.</p>
         </div>
       </div>
 
@@ -400,8 +404,8 @@
           <div class="flow-line"></div>
         </div>
         <div class="flow-body">
-          <div class="flow-label">Simulated annealing</div>
-          <p>300 000 random station swaps are proposed. Good swaps are always accepted; slightly bad ones are sometimes accepted too — this lets the algorithm escape local optima. Temperature cools gradually, converging to a stable solution. Three independent restarts are run; the best is kept.</p>
+          <div class="flow-label">Solve to proven optimality</div>
+          <p>An open-source solver (CBC, via PuLP) searches the layout space, discarding whole families of layouts it can prove will not beat the best found so far. Unlike a heuristic, it certifies the answer: no other layout satisfying the same rules scores higher. That separation distance adapts — it shrinks as the network densifies, and busy hexagons are allowed closer neighbours than quiet ones.</p>
         </div>
       </div>
 
@@ -411,7 +415,7 @@
         </div>
         <div class="flow-body">
           <div class="flow-label">Size each station</div>
-          <p>The total number of docks scales proportionally with the number of stations. Within that budget, stations with high effective demand, high imbalance, and high occupancy variability are assigned more docks (large); the rest get fewer.</p>
+          <p>The total dock budget scales with the station count — 1 232 docks at N = 70, the current network's total. Within that budget, stations with high demand and high rebalancing burden get more docks; every station stays between 15 and 25.</p>
         </div>
       </div>
 
@@ -423,13 +427,18 @@
   <!-- ── Controls ── -->
   <section>
     <h2>What you can tune in the demo</h2>
+    <p style="color:var(--muted); font-size:14px; margin-bottom:16px;">
+      Every combination below was solved in advance; the physical panel simply calls up the
+      matching layout on screen. Extra toggles reveal the demand score field, a day of simulated
+      trips, and how much population and workplaces fall within 100 / 200 / 300 m of a station.
+    </p>
     <div class="controls">
 
       <div class="ctrl">
         <span class="ctrl-tag">N</span>
         <div class="ctrl-body">
           <div class="ctrl-name">Number of stations</div>
-          <div class="ctrl-desc">How many stations to place. Current network has 70. More stations improve coverage and unlock latent demand, but increase capital cost.</div>
+          <div class="ctrl-desc">How many stations to place, from 70 to 120. The current network has 69. More stations improve coverage and unlock latent demand, but increase capital cost.</div>
         </div>
       </div>
 
@@ -437,23 +446,23 @@
         <span class="ctrl-tag w">W</span>
         <div class="ctrl-body">
           <div class="ctrl-name">Demand weight</div>
-          <div class="ctrl-desc">W = 1 → pure ridership maximisation. W = 0 → pure rebalancing minimisation. Default 0.6 balances both.</div>
+          <div class="ctrl-desc">W = 1 → pure ridership maximisation. Lower W shifts weight onto operating cost, hunting for cheaper-to-run locations. Reference value 0.6.</div>
         </div>
       </div>
 
       <div class="ctrl">
-        <span class="ctrl-tag lam">λ</span>
-        <div class="ctrl-body">
-          <div class="ctrl-name">Proximity penalty</div>
-          <div class="ctrl-desc">Discourages placing two stations too close together. Higher λ spreads stations out more aggressively.</div>
-        </div>
-      </div>
-
-      <div class="ctrl">
-        <span class="ctrl-tag pop">POP</span>
+        <span class="ctrl-tag cov">COV</span>
         <div class="ctrl-body">
           <div class="ctrl-name">Coverage target</div>
-          <div class="ctrl-desc">A penalty applied to layouts that fall short of the set coverage threshold — population within 300 m of a station. Raising this makes the optimizer penalise under-served residential areas more heavily.</div>
+          <div class="ctrl-desc">The minimum share of residents that must live within 200 m of a station, from 50 % to 100 %. Push it high enough and no layout can satisfy both coverage and spacing — the problem becomes infeasible.</div>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <span class="ctrl-tag man">M</span>
+        <div class="ctrl-body">
+          <div class="ctrl-name">Mandatory stations</div>
+          <div class="ctrl-desc">On, the 26 stations with an expensive grid connection or an intermodal role are locked in place. Off, the optimizer redraws the network from scratch — a useful "what if we started over?" comparison.</div>
         </div>
       </div>
 
