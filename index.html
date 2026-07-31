@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dbizi Station Optimizer — How it works</title>
+  <title>Dbizi Station Optimizer · How it works</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -44,15 +44,6 @@
     .header {
       text-align: center;
       margin-bottom: 48px;
-    }
-    .kicker {
-      display: inline-block;
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--accent);
-      margin-bottom: 12px;
     }
     h1 {
       font-size: clamp(24px, 6vw, 36px);
@@ -129,10 +120,31 @@
       border-radius: 10px;
       padding: 20px;
     }
+    .feature-head {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+    .feature-head span {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--dim);
+      text-align: center;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
     .feature-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 8px 16px;
+    }
+    .feature-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
     .feature-item {
       display: flex;
@@ -248,17 +260,6 @@
       border-top: 1px solid var(--border);
       margin: 40px 0;
     }
-
-    /* ── Footer ── */
-    footer {
-      text-align: center;
-      color: var(--dim);
-      font-size: 12px;
-    }
-    footer a {
-      color: var(--accent);
-      text-decoration: none;
-    }
   </style>
 </head>
 <body>
@@ -266,11 +267,10 @@
 
   <!-- ── Header ── -->
   <header class="header">
-    <span class="kicker">Dbizi · San Sebastián</span>
     <h1>Redesigning the bike-sharing network</h1>
     <p class="subtitle">
-      A data-driven model that finds where to place stations so more people can ride,
-      fewer staff hours are spent rebalancing bikes, and fewer truck trips pollute the city.
+      A data-driven model that finds where to place stations so more people can ride
+      and fewer truck trips pollute the city.
     </p>
   </header>
 
@@ -278,14 +278,27 @@
   <section>
     <h2>The problem</h2>
     <p>
-      Dbizi has 69 stations across the city. Many were placed years ago by intuition.
-      Some are chronically empty at rush hour; others sit full all day and require constant
-      rebalancing. With a full year of real trip data now available, we can do better.
+      The method described here works for any docked bike-sharing system. The case study is
+      Dbizi, the bike-sharing system of San Sebastián, which has run since 2020 with 70 stations
+      across the city, most of them sited by intuition. Some are chronically empty at rush hour;
+      others sit full all day and require constant rebalancing. Years of recorded trips are now
+      available, over a million in 2024 alone, and a full system redesign is scheduled for 2028.
     </p>
     <p>
       This tool asks: given a budget of <em>N</em> stations, where should they go to maximise
-      ridership while minimising operational burden — without leaving whole neighbourhoods
+      ridership while minimising operational cost, without leaving whole neighbourhoods
       out of walking range?
+    </p>
+  </section>
+
+  <hr />
+
+  <!-- ── Hexagons ── -->
+  <section>
+    <h2>The grid</h2>
+    <p>
+      The city is discretised into <strong>H3 hexagons</strong>. Every candidate location is one
+      hexagon, and each carries the two scores below.
     </p>
   </section>
 
@@ -301,14 +314,15 @@
         <div class="pillar-body">
           <div class="pillar-title">Demand</div>
           <p class="pillar-desc">
-            How much cycling activity a location is expected to attract.
-            A gradient-boosting model (LightGBM) is trained on the 69 current stations —
-            on trips per m² of catchment area, not raw trip counts — and then applied citywide
-            to hexagonal cells of ~2 200 m². Each station captures demand from its surroundings,
-            shaped by <strong>elevation</strong>, nearby <strong>cycling infrastructure</strong>,
-            <strong>residential population</strong>, and the concentration of
-            <strong>points of interest</strong> such as workplaces, restaurants, and transit stops.
-            Leave-one-station-out R² = 0.66.
+            How much cycling activity a location is expected to attract, measured as
+            arrivals plus departures per year divided by the station's effective catchment
+            area. Two predictors are combined. <strong>LightGBM</strong> learns the relationship
+            between that usage density and the urban variables surrounding each of the 70
+            current stations, and extends it to every hexagon in the city. A
+            <strong>geographic KNN</strong> instead interpolates the observed performance of the
+            nearest current stations. The two are blended, with the weight shifting toward the
+            interpolation as a hexagon lies closer to an existing station and toward the model as
+            it lies further away. Leave-one-station-out R² = 0.66.
           </p>
         </div>
       </div>
@@ -316,14 +330,17 @@
       <div class="pillar">
         <div class="pillar-icon">⚖️</div>
         <div class="pillar-body">
-          <div class="pillar-title">Operating cost</div>
+          <div class="pillar-title">Operational cost</div>
           <p class="pillar-desc">
-            Some locations structurally generate imbalance: gravity, commute patterns, and uneven
-            land use create persistent flows that staff must reverse by van every day. Cost is built
-            from three pillars — <strong>LIS</strong> (Lost Imbalance Surplus: bike-hours outside a
-            ±10 bike comfort band), inflated by day-to-day <strong>unpredictability</strong> and by the
-            <strong>drive time</strong> from the nearest main road corridor, so erratic and hard-to-reach
-            stations pay extra.
+            Some locations structurally generate imbalance: topography, commute patterns, and
+            uneven land use produce persistent net flows that operators must reverse by van.
+            Cost = <strong>LIS</strong> × (1 + α × instability + β × road distance).
+            <strong>LIS</strong> (Lost Imbalance Surplus) measures how much rebalancing work a
+            station would generate; <strong>instability</strong> measures how predictable that
+            work is, and therefore how far ahead the rebalancing team can plan for it;
+            <strong>road distance</strong> is the drive time from the nearest principal corridor. Rebalancing need and instability are predicted citywide
+            by the same LightGBM-plus-KNN procedure used for demand; road distance follows
+            directly from the road network.
           </p>
         </div>
       </div>
@@ -333,11 +350,11 @@
         <div class="pillar-body">
           <div class="pillar-title">Population coverage</div>
           <p class="pillar-desc">
-            Some parts of the city will never be high-demand corridors — and some are an
-            operational headache to serve. But they still need access. Coverage enters as a
-            <em>hard constraint</em>, not a penalty: the layout must put at least a chosen
-            percentage of residents within 200 m of a station, whatever the demand surface says
-            about those neighbourhoods.
+            Some parts of the city will never be high-demand corridors, and some are
+            operationally awkward to serve. But they still need access. A minimum coverage
+            requirement is therefore imposed on the layout: at least a chosen percentage of
+            residents must live within 200 m of a station, whatever the demand and cost surfaces
+            say about those neighbourhoods.
           </p>
         </div>
       </div>
@@ -351,20 +368,31 @@
   <section>
     <h2>What predicts demand?</h2>
     <p style="color:var(--muted); font-size:14px; margin-bottom:16px;">
-      The model was trained on decensored Dbizi trip counts per station, normalised by an
-      overlap-corrected catchment area. Nine neighbourhood-level features describe every hexagon:
+      Nine variables describe every hexagon. Trips blocked when a station stood full or empty are
+      reconstructed before training, so the target reflects latent demand rather than only what
+      the docks could absorb:
     </p>
     <div class="features">
+      <div class="feature-head">
+        <span>Calculated 300 m around</span>
+        <span>Per-hexagon lookup</span>
+      </div>
       <div class="feature-grid">
-        <div class="feature-item"><span class="dot"></span><span><strong>Bike lane length</strong> nearby</span></div>
-        <div class="feature-item"><span class="dot"></span><span><strong>Workers</strong> in the area</span></div>
-        <div class="feature-item"><span class="dot"></span><span><strong>Restaurants, bars &amp; shops</strong> within 300 m</span></div>
-        <div class="feature-item"><span class="dot"></span><span><strong>Residential population</strong> (age-weighted)</span></div>
-        <div class="feature-item"><span class="dot"></span><span><strong>Schools &amp; universities</strong> nearby</span></div>
-        <div class="feature-item"><span class="dot"></span><span><strong>Land-use entropy</strong> (mix of uses)</span></div>
-        <div class="feature-item"><span class="dot"></span><span><strong>Altitude</strong> (steeper = less use)</span></div>
-        <div class="feature-item"><span class="dot"></span><span><strong>City-centre</strong> flag</span></div>
-        <div class="feature-item"><span class="dot"></span><span><strong>Income</strong> per person</span></div>
+        <div class="feature-col">
+          <div class="feature-item"><span class="dot"></span><span><strong>Bike lanes</strong></span></div>
+          <div class="feature-item"><span class="dot"></span><span><strong>Workers</strong></span></div>
+          <div class="feature-item"><span class="dot"></span><span><strong>Residential population</strong></span></div>
+        </div>
+        <div class="feature-col">
+          <div class="feature-item"><span class="dot"></span><span><strong>Restaurants, bars &amp; shops</strong></span></div>
+          <div class="feature-item"><span class="dot"></span><span><strong>Schools &amp; universities</strong></span></div>
+          <div class="feature-item"><span class="dot"></span><span><strong>Land-use entropy</strong></span></div>
+        </div>
+        <div class="feature-col">
+          <div class="feature-item"><span class="dot"></span><span><strong>Altitude</strong></span></div>
+          <div class="feature-item"><span class="dot"></span><span><strong>Income</strong> per person</span></div>
+          <div class="feature-item"><span class="dot"></span><span><strong>City centre</strong></span></div>
+        </div>
       </div>
     </div>
   </section>
@@ -383,7 +411,7 @@
         </div>
         <div class="flow-body">
           <div class="flow-label">Score every candidate site</div>
-          <p>The city is filtered down to ~5 000 buildable hexagons — at least 500 residents within 300 m, no river, no pedestrianised Old Town. Each one carries a demand score and an operating-cost score, both normalised to [0, 1].</p>
+          <p>The grid is filtered down to ~5 000 buildable hexagons: at least 500 residents within 300 m, no river, no pedestrianised Old Town. Each one carries a demand score and an operating-cost score, both normalised to [0, 1].</p>
         </div>
       </div>
 
@@ -394,7 +422,7 @@
         </div>
         <div class="flow-body">
           <div class="flow-label">Write it as an integer program</div>
-          <p>One yes/no variable per hexagon. Maximise W × demand − (1 − W) × cost, subject to four rules: exactly N stations; 26 stations with electrical hookups or at intermodal nodes are kept; the coverage floor is met; and no two stations sit closer than their minimum separation.</p>
+          <p>One yes/no variable per hexagon. Maximise W × demand − (1 − W) × cost, subject to four rules: exactly N stations; the 26 stations with electrical hookups or at intermodal nodes are kept, if that option is active; the coverage floor is met; and no two stations sit closer than their exclusion radius.</p>
         </div>
       </div>
 
@@ -405,7 +433,7 @@
         </div>
         <div class="flow-body">
           <div class="flow-label">Solve to proven optimality</div>
-          <p>An open-source solver (CBC, via PuLP) searches the layout space, discarding whole families of layouts it can prove will not beat the best found so far. Unlike a heuristic, it certifies the answer: no other layout satisfying the same rules scores higher. That separation distance adapts — it shrinks as the network densifies, and busy hexagons are allowed closer neighbours than quiet ones.</p>
+          <p>An open-source solver (CBC, via PuLP) searches the layout space, discarding whole families of layouts it can prove will not beat the best found so far. Unlike a heuristic, it certifies the answer: no other layout satisfying the same rules scores higher. The minimum separation is set by a variable exclusion radius drawn around each station: it shrinks as the network densifies, and busy locations carry a smaller radius than quiet ones, so they may sit closer together.</p>
         </div>
       </div>
 
@@ -415,7 +443,7 @@
         </div>
         <div class="flow-body">
           <div class="flow-label">Size each station</div>
-          <p>The total dock budget scales with the station count — 1 232 docks at N = 70, the current network's total. Within that budget, stations with high demand and high rebalancing burden get more docks; every station stays between 15 and 25.</p>
+          <p>The total dock budget scales with the station count: 1 232 docks at N = 70, the current network's total. Within that budget, stations with high demand and high rebalancing burden get more docks; every station stays between 15 and 25.</p>
         </div>
       </div>
 
@@ -429,8 +457,7 @@
     <h2>What you can tune in the demo</h2>
     <p style="color:var(--muted); font-size:14px; margin-bottom:16px;">
       Every combination below was solved in advance; the physical panel simply calls up the
-      matching layout on screen. Extra toggles reveal the demand score field, a day of simulated
-      trips, and how much population and workplaces fall within 100 / 200 / 300 m of a station.
+      matching layout on screen, alongside the demand score field and a day of simulated trips.
     </p>
     <div class="controls">
 
@@ -438,7 +465,7 @@
         <span class="ctrl-tag">N</span>
         <div class="ctrl-body">
           <div class="ctrl-name">Number of stations</div>
-          <div class="ctrl-desc">How many stations to place, from 70 to 120. The current network has 69. More stations improve coverage and unlock latent demand, but increase capital cost.</div>
+          <div class="ctrl-desc">How many stations to place, from 70 to 120. The current network has 70. More stations improve coverage and unlock latent demand, but increase capital cost.</div>
         </div>
       </div>
 
@@ -454,7 +481,7 @@
         <span class="ctrl-tag cov">COV</span>
         <div class="ctrl-body">
           <div class="ctrl-name">Coverage target</div>
-          <div class="ctrl-desc">The minimum share of residents that must live within 200 m of a station, from 50 % to 100 %. Push it high enough and no layout can satisfy both coverage and spacing — the problem becomes infeasible.</div>
+          <div class="ctrl-desc">The minimum share of residents that must live within 200 m of a station, from 50 % to 95 %. Some combinations have no solution at all: 95 % of the population cannot be reached with only 70 stations, for instance.</div>
         </div>
       </div>
 
@@ -462,18 +489,12 @@
         <span class="ctrl-tag man">M</span>
         <div class="ctrl-body">
           <div class="ctrl-name">Mandatory stations</div>
-          <div class="ctrl-desc">On, the 26 stations with an expensive grid connection or an intermodal role are locked in place. Off, the optimizer redraws the network from scratch — a useful "what if we started over?" comparison.</div>
+          <div class="ctrl-desc">On, the 26 stations with an expensive grid connection or an intermodal role are locked in place. Off, the optimizer redraws the network from scratch, a useful "what if we started over?" comparison.</div>
         </div>
       </div>
 
     </div>
   </section>
-
-  <hr />
-
-  <footer>
-    <p>Dbizi station optimizer · Members Week 2025 · Donostia – San Sebastián</p>
-  </footer>
 
 </div>
 </body>
