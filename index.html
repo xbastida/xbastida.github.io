@@ -253,6 +253,17 @@
     .ctrl-body {}
     .ctrl-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
     .ctrl-desc { font-size: 13px; color: var(--muted); }
+    .ctrl-formula {
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: ui-monospace, monospace;
+      font-size: 13px;
+      color: var(--accent2);
+      text-align: center;
+    }
 
     /* ── Divider ── */
     hr {
@@ -318,7 +329,7 @@
             arrivals plus departures per year divided by the station's effective catchment
             area. Two predictors are combined. <strong>LightGBM</strong> learns the relationship
             between that usage density and the urban variables surrounding each of the 70
-            current stations, and extends it to every hexagon in the city. A
+            current stations, listed further down, and extends it to every hexagon in the city. A
             <strong>geographic KNN</strong> instead interpolates the observed performance of the
             nearest current stations. The two are blended, with the weight shifting toward the
             interpolation as a hexagon lies closer to an existing station and toward the model as
@@ -338,9 +349,11 @@
             <strong>LIS</strong> (Lost Imbalance Surplus) measures how much rebalancing work a
             station would generate; <strong>instability</strong> measures how predictable that
             work is, and therefore how far ahead the rebalancing team can plan for it;
-            <strong>road distance</strong> is the drive time from the nearest principal corridor. Rebalancing need and instability are predicted citywide
-            by the same LightGBM-plus-KNN procedure used for demand; road distance follows
-            directly from the road network.
+            <strong>road distance</strong> measures how long the rebalancing van takes to get
+            there, as the drive time along the street network from the nearest principal
+            corridor. Rebalancing need and instability are predicted citywide by the same
+            LightGBM-plus-KNN procedure used for demand; road distance is calculated directly
+            from the road network.
           </p>
         </div>
       </div>
@@ -351,7 +364,7 @@
           <div class="pillar-title">Population coverage</div>
           <p class="pillar-desc">
             Some parts of the city will never be high-demand corridors, and some are
-            operationally awkward to serve. But they still need access. A minimum coverage
+            operationally costly to serve. But they still need access. A minimum coverage
             requirement is therefore imposed on the layout: at least a chosen percentage of
             residents must live within 200 m of a station, whatever the demand and cost surfaces
             say about those neighbourhoods.
@@ -366,7 +379,7 @@
 
   <!-- ── Demand features ── -->
   <section>
-    <h2>What predicts demand?</h2>
+    <h2>Which variables train LightGBM</h2>
     <p style="color:var(--muted); font-size:14px; margin-bottom:16px;">
       Nine variables describe every hexagon. Trips blocked when a station stood full or empty are
       reconstructed before training, so the target reflects latent demand rather than only what
@@ -390,7 +403,7 @@
         </div>
         <div class="feature-col">
           <div class="feature-item"><span class="dot"></span><span><strong>Altitude</strong></span></div>
-          <div class="feature-item"><span class="dot"></span><span><strong>Income</strong> per person</span></div>
+          <div class="feature-item"><span class="dot"></span><span><strong>Income</strong></span></div>
           <div class="feature-item"><span class="dot"></span><span><strong>City centre</strong></span></div>
         </div>
       </div>
@@ -410,8 +423,8 @@
           <div class="flow-line"></div>
         </div>
         <div class="flow-body">
-          <div class="flow-label">Score every candidate site</div>
-          <p>The grid is filtered down to ~5 000 buildable hexagons: at least 500 residents within 300 m, no river, no pedestrianised Old Town. Each one carries a demand score and an operating-cost score, both normalised to [0, 1].</p>
+          <div class="flow-label">Filter the hexagons and score them</div>
+          <p>The grid is filtered down to ~5 000 buildable hexagons: at least 500 residents within 300 m, no river, no pedestrianised Old Town. Each one carries a demand score and an operating-cost score, calculated by the procedure explained above and both normalised to [0, 1].</p>
         </div>
       </div>
 
@@ -473,7 +486,8 @@
         <span class="ctrl-tag w">W</span>
         <div class="ctrl-body">
           <div class="ctrl-name">Demand weight</div>
-          <div class="ctrl-desc">W = 1 → pure ridership maximisation. Lower W shifts weight onto operating cost, hunting for cheaper-to-run locations. Reference value 0.6.</div>
+          <div class="ctrl-desc">W = 1 → pure ridership maximisation. Lower W shifts weight onto operating cost, favouring cheaper-to-run locations. Reference value 0.6.</div>
+          <div class="ctrl-formula">W × demand − (1 − W) × cost</div>
         </div>
       </div>
 
